@@ -23,6 +23,7 @@
 15. [【錯誤 15】Git Push 報錯：`remote: Repository not found.` (帳號命名或儲存庫未建立)](#錯誤-15git-push-報錯remote-repository-not-found-帳號命名或儲存庫未建立)
 16. [【錯誤 16】GitHub README LaTeX 公式報錯：`The following macros are not allowed: operatorname`](#錯誤-16github-readme-latex-公式報錯the-following-macros-are-not-allowed-operatorname)
 17. [【文件優化 17】README 瘦身聚焦 HACS 使用者體驗，新增 Zone 設定教學並拆分進階手冊](#文件優化-17readme-瘦身聚焦-hacs-使用者體驗新增-zone-設定教學並拆分進階手冊)
+18. [【錯誤 18】GitHub Mermaid 流程圖報錯：`Parse error on line 4 ... got 'PS'`](#錯誤-18github-mermaid-流程圖報錯parse-error-on-line-4--got-ps)
 
 ---
 
@@ -461,6 +462,33 @@ The following macros are not allowed: operatorname
 
 ---
 
+## 錯誤 18：GitHub Mermaid 流程圖報錯：`Parse error on line 4 ... got 'PS'`
+
+### 1. 錯誤現象
+在 GitHub 網站瀏覽 `README.md` 的「一、特色與核心架構」時，流程圖未能正常渲染出圖表，而是呈現灰色報錯區塊：
+```text
+Unable to render rich display
+
+Parse error on line 4:
+... subgraph 多地點獨立監控實例 (Config Entries)
+-----------------------^
+Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'GRAPH', 'DIR', 'subgraph', 'SQS', 'end', 'AMP', 'COLON', 'START_LINK', 'STYLE', 'LINKSTYLE', 'CLASSDEF', 'CLASS', 'CLICK', 'DOWN', 'UP', 'NUM', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'PS'
+```
+
+### 2. 根本原因分析 (RCA)
+* **Mermaid 語法規範**：在 `flowchart` 或 `graph` 中，`subgraph` 宣告若包含特殊符號（例如括號 `()`、斜線、空格等），不能直接裸露撰寫。
+* 原始寫法：`subgraph 多地點獨立監控實例 (Config Entries)`
+  * 解析器讀取到左括號 `(` 時，將其辨識為標記錯誤（`got 'PS'` 即 Parenthesis Start，而非預期的節點識別碼），導致整個流程圖解析崩潰中斷。
+
+### 3. 處理作為與實作修復
+* **修復寫法**：改採標準的 `subgraph <id>["<Title>"]` 語法，為子圖指定英文字元 ID，並將包含中文與括號的標題置於中括號與雙引號中：
+  ```mermaid
+  subgraph sub1["多地點獨立監控實例 (Config Entries)"]
+  ```
+* **驗證方式**：修正後推送到 GitHub，Mermaid 圖表即可完整且美觀地渲染出包含 CWA API、多地點協調器與 HA 實體的豐富流程圖。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -482,4 +510,5 @@ The following macros are not allowed: operatorname
 | **15** | Git Push 報錯找不到儲存庫 | `git remote set-url` | 排查 GitHub 命名規則（不支援點號），指引至 GitHub.com 建立空專案並更新遠端網址。 | 修正 Remote URL 後順利推送 |
 | **16** | LaTeX 報錯 operatorname 禁用 | `README.md` | GitHub 禁用 `\operatorname` 巨集，改採相容之標準 `\arctan` 語法。 | GitHub 數學公式完美渲染 |
 | **17** | README 瘦身與聚焦 HACS 使用 | `README.md`, `DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md` | 搬遷 Docker 與 CI/CD 評估至獨立手冊，新增 HA Zone 建立教學，提升文件閱讀性。 | 結構簡潔聚焦 HACS 使用者 |
+| **18** | Mermaid 圖表括號解析報錯 | `README.md` | `subgraph` 標題含括號未加引號，修正為 `subgraph id["Title"]` 標準語法。 | GitHub 流程圖正常渲染 |
 

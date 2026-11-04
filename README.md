@@ -29,7 +29,7 @@
 flowchart TD
     A["中央氣象署 CWA API (O-A0002-001)"] -->|全台 700+ 自動雨量站數據| B["CwaApiClient (內建 60 秒 TTL 快取)"]
     
-    subgraph 多地點獨立監控實例 (Config Entries)
+    subgraph sub1["多地點獨立監控實例 (Config Entries)"]
         B -->|共享快取，零重複請求| C1["住家協調器 (Coordinator - Home)"]
         B -->|共享快取，零重複請求| C2["工作地點協調器 (Coordinator - Work)"]
         

@@ -22,6 +22,7 @@
 14. [【架構升級 14】由獨立外部 Docker 容器服務全面升級為 HACS 自訂整合 (Custom Integration) 與多座標支援](#架構升級-14由獨立外部-docker-容器服務全面升級為-hacs-自訂整合-custom-integration-與多座標支援)
 15. [【錯誤 15】Git Push 報錯：`remote: Repository not found.` (帳號命名或儲存庫未建立)](#錯誤-15git-push-報錯remote-repository-not-found-帳號命名或儲存庫未建立)
 16. [【錯誤 16】GitHub README LaTeX 公式報錯：`The following macros are not allowed: operatorname`](#錯誤-16github-readme-latex-公式報錯the-following-macros-are-not-allowed-operatorname)
+17. [【文件優化 17】README 瘦身聚焦 HACS 使用者體驗，新增 Zone 設定教學並拆分進階手冊](#文件優化-17readme-瘦身聚焦-hacs-使用者體驗新增-zone-設定教學並拆分進階手冊)
 
 ---
 
@@ -444,6 +445,22 @@ The following macros are not allowed: operatorname
 
 ---
 
+## 文件優化 17：README 瘦身聚焦 HACS 使用者體驗，新增 Zone 設定教學並拆分進階手冊
+
+### 1. 需求背景與核心問題
+1. **README 篇幅過於繁複**：原 `README.md` 混合了 HACS 整合指南、Docker Compose/Portainer 部署、架構深度評估以及 CI/CD 工作流程，容易使從 HACS 尋求外掛安裝的一般使用者感到困惑，不知道該採用何種方式。
+2. **缺乏 HA 區域 (Zone) 建立引導**：整合雖然支援從 HA Zone 下拉選擇地點，但使用者不清楚如何在 Home Assistant 介面中新增「工作地點」或「公司」等自訂 Zone。
+
+### 2. 處理作為與實作修復
+1. **建立獨立進階文件**：
+   * 建立 [`DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md`](file:///f:/Antigravity/Rain/DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md)，將原「方案評估 (HACS vs Add-on vs 獨立 Docker)」、「Portainer Stacks 容器化部署指南」與「GitHub Actions CI/CD 工作流程」完整搬遷歸檔。
+2. **README 重新架構與聚焦**：
+   * `README.md` 全面聚焦於 Home Assistant HACS 自訂整合之使用。
+   * 新增專屬第四章節 **「如何於 Home Assistant 中新增選擇區域 (Zone)」**，詳細提供從「設定 $\to$ 區域與標籤 $\to$ 區域 $\to$ ＋新增區域」的地圖拖曳與座標輸入教學。
+3. **驗證方式**：查閱 `README.md` 目錄結構流暢、層次分明，使用者能一目了然完成從 HACS 安裝到多地點配置的所有流程。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -464,4 +481,5 @@ The following macros are not allowed: operatorname
 | **14** | 升級 HACS 整合與多座標支援 | `custom_components/cwa_rain/` | 全面實作標準 HACS Custom Integration，完全免 Token，支援多座標實例與全台快取。 | 單元測試 4 項全數通過 |
 | **15** | Git Push 報錯找不到儲存庫 | `git remote set-url` | 排查 GitHub 命名規則（不支援點號），指引至 GitHub.com 建立空專案並更新遠端網址。 | 修正 Remote URL 後順利推送 |
 | **16** | LaTeX 報錯 operatorname 禁用 | `README.md` | GitHub 禁用 `\operatorname` 巨集，改採相容之標準 `\arctan` 語法。 | GitHub 數學公式完美渲染 |
+| **17** | README 瘦身與聚焦 HACS 使用 | `README.md`, `DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md` | 搬遷 Docker 與 CI/CD 評估至獨立手冊，新增 HA Zone 建立教學，提升文件閱讀性。 | 結構簡潔聚焦 HACS 使用者 |
 

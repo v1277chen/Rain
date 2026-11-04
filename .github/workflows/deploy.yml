@@ -1,0 +1,50 @@
+# ==============================================================================
+# GitHub Actions 工作流程：自動部署專案文件至 GitHub Pages
+# 檔案路徑：.github/workflows/deploy.yml
+# 功能：當 main 或 master 分支有更動推送時，自動將靜態頁面發佈到 GitHub Pages
+# ==============================================================================
+
+name: Deploy to GitHub Pages
+
+# 觸發條件：推送至 main 或 master 分支，或手動由 Actions 分頁觸發
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+# 設定 GitHub Actions 的 GITHUB_TOKEN 權限，允許寫入 GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 確保同時只有一個部署任務在執行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簽出專案原始碼 (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 設定 GitHub Pages 環境
+        uses: actions/configure-pages@v5
+
+      - name: 打包靜態站點檔案 (Upload Artifact)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 發布專案根目錄（包含 index.html 及相關文件）
+          path: '.'
+
+      - name: 部署至 GitHub Pages (Deploy)
+        id: deployment
+        uses: actions/deploy-pages@v4
+

@@ -1,0 +1,94 @@
+# ==============================================================================
+# Portainer Stacks / Docker Compose 部署配置檔
+# 檔案名稱：docker-compose.yml
+# 服務：中央氣象署雨量監控與 Home Assistant 同步服務 (cwa-ha-rain-monitor)
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  cwa-rain-monitor:
+    # 容器名稱
+    container_name: cwa-rain-monitor
+    
+    # 1. 建置設定 (若在專案目錄下執行 docker compose up -d 可直接建置)
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # 映像檔標籤 (若事先 build 好的映像名稱)
+    image: cwa-ha-rain-monitor:latest
+    
+    # 重啟策略：除非手動停止，否則主機開機或崩潰時自動重啟
+    restart: unless-stopped
+    
+    # 2. 網路模式 (重要)
+    # 與 Home Assistant 位於同一個區網 (LAN)，推薦使用 host 模式：
+    # - 可以直接連通區網內的所有 IP，免除 Docker 虛擬網路 NAT 與 DNS 解析問題
+    # - 若您的 Portainer 運行在特定虛擬網卡，亦可改為 bridge 模式，並在 HA_BASE_URL 填寫 HA 的區網實體 IP
+    network_mode: host
+    
+    # 3. 系統環境變數配置
+    environment:
+      # 系統時區 (強制台灣標準時間 UTC+8)
+      - TZ=Asia/Taipei
+      
+      # Python 即時輸出日誌 (避免 Portainer 查看 Log 時有延遲)
+      - PYTHONUNBUFFERED=1
+      
+      # ------------------------------------------------------------------------
+      # 【必填】中央氣象署 (CWA) 平台設定
+      # 請至 https://opendata.cwa.gov.tw/ 申請免費會員並取得授權碼 (Token)
+      # ------------------------------------------------------------------------
+      - CWA_API_TOKEN=YOUR_CWA_API_KEY_HERE
+      - CWA_DATASET_ID=O-A0002-001
+      
+      # ------------------------------------------------------------------------
+      # 【必填】Home Assistant 區域網路連線設定
+      # 注意：因處於同一區網，請務必填寫 Home Assistant 的區網實體 IP 與 Port (8123)
+      # 範例：http://192.168.1.100:8123 或 http://homeassistant.local:8123
+      # ------------------------------------------------------------------------
+      - HA_BASE_URL=http://192.168.1.100:8123
+      
+      # Home Assistant 長效存取權杖 (Long-Lived Access Token)
+      # 取得方式：HA 側邊欄點選個人帳號 -> 最下方「長效存取權杖」-> 建立權杖並複製貼上
+      - HA_ACCESS_TOKEN=YOUR_HA_LONG_LIVED_ACCESS_TOKEN_HERE
+      
+      # ------------------------------------------------------------------------
+      # 【選填】住家地理經緯度 (預設為臺南市安南/北區交界)
+      # ------------------------------------------------------------------------
+      - HOME_LATITUDE=23.0150
+      - HOME_LONGITUDE=120.2050
+      
+      # 測站模式：'fixed' (鎖定安南、北區、永康、安定) 或 'auto' (自動計算離家最近4站)
+      - STATION_SELECTION_MODE=fixed
+      
+      # ------------------------------------------------------------------------
+      # 【選填】降雨判定與防抖動參數
+      # ------------------------------------------------------------------------
+      # 單站微雨門檻 (過去10分鐘雨量 mm)
+      - RAIN_DETECTED_MM=0.1
+      # 單站驟雨門檻 (過去10分鐘雨量 mm，任一站達標立即觸發下雨)
+      - HEAVY_RAIN_MM=1.5
+      # 輪詢週期秒數 (300 秒 = 5 分鐘)
+      - POLLING_INTERVAL_SECONDS=300
+      # 防抖動關閉冷卻次數 (連續 3 次無雨 = 15 分鐘冷卻，才轉為停雨)
+      - DEBOUNCE_OFF_COUNT=3
+      # 防抖動開啟次數 (連續 1 次達標即刻開啟)
+      - DEBOUNCE_ON_COUNT=1
+
+    # 4. 磁碟目錄掛載 (可選)
+    # 若希望使用實體 config.yaml 管理更複雜的客製化參數，可取消下方註解並掛載：
+    # volumes:
+    #   - ./config.yaml:/app/config.yaml:ro
+    
+    # 5. 資源限制 (保護系統資源，避免無限佔用)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+

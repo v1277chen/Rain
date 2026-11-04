@@ -1,0 +1,70 @@
+# ==============================================================================
+# 中央氣象署雨量監控與 Home Assistant 整合設定檔範本
+# 檔案名稱：config.example.yaml
+# 使用說明：複製本檔案為 config.yaml 並填入您的真實金鑰與設定值
+# ==============================================================================
+
+# 中央氣象署 (CWA) 開放資料平台設定
+cwa:
+  # 氣象署開放資料 API 授權碼 (請至 https://opendata.cwa.gov.tw/ 申請會員取得)
+  api_token: "YOUR_CWA_API_KEY_HERE"
+  # 自動雨量站觀測資料 API 代碼 (預設: O-A0002-001)
+  dataset_id: "O-A0002-001"
+  # API 請求逾時秒數 (預設: 15 秒)
+  timeout_seconds: 15
+
+# 使用者住家位置資訊 (用於 Haversine 球面距離計算)
+location:
+  # 緯度 (範例為臺南市安南區/北區交界附近)
+  home_latitude: 23.0150
+  # 經度
+  home_longitude: 120.2050
+  # 模式: "auto" (動態挑選離家最近4站) 或 "fixed" (鎖定下方指定測站)
+  # 當設為 "auto" 時，系統會自動從氣象署全台測站中計算距離，動態挑選最近 4 座測站！
+  station_selection_mode: "fixed"
+  # 是否自動向 Home Assistant 同步 zone.home 經緯度 (預設: true)
+  # 若啟用，當您在 HA 介面變更住家位置時，程式每輪會自動更新住家座標並重新挑選最近 4 站
+  auto_sync_ha_zone: true
+  # 指定測站代碼清單 (若 mode 為 fixed 時生效)
+  target_stations:
+    - id: "C2O950"
+      name: "安南"
+    - id: "C0X100"
+      name: "臺南市北區"
+    - id: "467420"
+      name: "永康"
+    - id: "C0X150"
+      name: "安定"
+
+# 雨量判定與防抖動 (Debounce) 機制參數設定
+thresholds:
+  # 單站微雨判定門檻 (過去10分鐘雨量 mm，超過或等於此值視為該站有雨)
+  rain_detected_mm: 0.1
+  # 一般降雨至少需要幾站達到有雨門檻 (預設: 2 站)
+  stations_rain_count: 2
+  # 單站大雨/驟雨門檻 (過去10分鐘雨量 mm，只要任一站達此門檻即判定為正在下雨)
+  heavy_rain_single_station_mm: 1.5
+  # 防抖動：轉為「正在下雨 (ON)」需連續滿足的輪詢次數 (預設: 1 次，即滿足立即開啟，減少延遲)
+  debounce_on_count: 1
+  # 防抖動：轉為「停雨 (OFF)」需連續無雨的輪詢次數 (每5分鐘輪詢一次，3次代表連續15分鐘無雨才關閉)
+  debounce_off_count: 3
+  # 輪詢週期 (秒數，預設 300 秒 = 5 分鐘)
+  polling_interval_seconds: 300
+
+# Home Assistant 連線設定
+home_assistant:
+  # 是否啟用 HA 連動 (除錯或獨立運行時可設為 false)
+  enabled: true
+  # HA 主機位址 (例如: http://192.168.1.100:8123 或 http://homeassistant.local:8123)
+  base_url: "http://homeassistant.local:8123"
+  # HA 長效存取權杖 (Long-Lived Access Token，由 HA 使用者個人檔案中生成)
+  access_token: "YOUR_HA_LONG_LIVED_ACCESS_TOKEN"
+  # 連動實體名稱
+  entities:
+    # 正在下雨之 input_boolean
+    boolean_is_raining: "input_boolean.is_raining"
+    # 雨雲接近預警之 input_boolean
+    boolean_rain_approaching: "input_boolean.rain_approaching_warning"
+    # 雨量詳情感測器 sensor
+    sensor_rain_monitor: "sensor.cwa_rain_monitor"
+

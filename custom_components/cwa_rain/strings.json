@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "中央氣象署雨量監控 - 基本設定",
+        "description": "請輸入中央氣象署開放資料平台授權碼，並指定監控地點名稱。",
+        "data": {
+          "api_token": "氣象署 API 授權碼 (Token)",
+          "location_name": "地點識別名稱 (如: 住家、公司、老家)",
+          "use_zone": "使用現有 Home Assistant 區域 (Zone)",
+          "selection_mode": "測站選取模式"
+        }
+      },
+      "zone": {
+        "title": "選擇監控區域",
+        "description": "請選擇對應的 Home Assistant 區域實體。系統將自動讀取該區域的經緯度座標。",
+        "data": {
+          "zone_entity": "區域實體 (Zone)",
+          "auto_sync_zone": "隨區域在地圖上的位移自動動態更新座標"
+        }
+      },
+      "manual": {
+        "title": "手動設定經緯度",
+        "description": "請輸入欲監控地點之精準 GPS 經緯度座標 (WGS84)。",
+        "data": {
+          "latitude": "緯度 (Latitude)",
+          "longitude": "經度 (Longitude)"
+        }
+      },
+      "thresholds": {
+        "title": "降雨判定與防抖動參數",
+        "description": "設定防抖動門檻與冷卻時間，避免微雨或間歇雨滴造成頻繁開關。",
+        "data": {
+          "polling_interval": "氣象更新輪詢週期 (秒，預設 300 秒 = 5 分鐘)",
+          "rain_detected_mm": "單站微雨判定門檻 (mm，預設 0.1)",
+          "stations_rain_count": "一般降雨最少有雨測站數 (預設 2 站)",
+          "heavy_rain_single_station_mm": "單站驟雨瞬間判定門檻 (mm，預設 1.5)",
+          "debounce_on_count": "轉為正在下雨需連續滿足次數 (預設 1 次快速反應)",
+          "debounce_off_count": "解除停雨需連續無雨次數 (預設 3 次 = 15 分鐘冷卻)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "氣象署 API 金鑰驗證失敗，請檢查授權碼是否正確或已過期。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "調整雨量判定參數",
+        "description": "調整本監控地點的輪詢間隔與防抖動門檻。",
+        "data": {
+          "polling_interval": "氣象更新輪詢週期 (秒)",
+          "rain_detected_mm": "單站微雨判定門檻 (mm)",
+          "stations_rain_count": "一般降雨最少有雨測站數",
+          "heavy_rain_single_station_mm": "單站驟雨瞬間判定門檻 (mm)",
+          "debounce_on_count": "轉為正在下雨需連續滿足次數",
+          "debounce_off_count": "解除停雨需連續無雨次數"
+        }
+      }
+    }
+  }
+}

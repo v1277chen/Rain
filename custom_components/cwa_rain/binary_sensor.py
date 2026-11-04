@@ -116,3 +116,4 @@ class CwaRainApproachingBinarySensor(CwaRainBaseBinarySensor):
     def icon(self) -> str:
         """動態顯示天氣預警圖示。"""
         return "mdi:weather-partly-rainy" if self.is_on else "mdi:weather-cloudy"
+

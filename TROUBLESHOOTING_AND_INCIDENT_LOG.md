@@ -20,6 +20,7 @@
 12. [【問題 12】`weather-chart-card` 實體類型不符導致錯誤與 `weather.forecast_home` 不存在](#問題-12weather-chart-card-實體類型不符導致錯誤與-weatherforecast_home-不存在)
 13. [【功能演進 13】住家經緯度變更時，自動取得氣象署測站並切換最近 4 站機制](#功能演進-13住家經緯度變更時自動取得氣象署測站並切換最近-4-站機制)
 14. [【架構升級 14】由獨立外部 Docker 容器服務全面升級為 HACS 自訂整合 (Custom Integration) 與多座標支援](#架構升級-14由獨立外部-docker-容器服務全面升級為-hacs-自訂整合-custom-integration-與多座標支援)
+15. [【錯誤 15】Git Push 報錯：`remote: Repository not found.` (帳號命名或儲存庫未建立)](#錯誤-15git-push-報錯remote-repository-not-found-帳號命名或儲存庫未建立)
 
 ---
 
@@ -378,6 +379,47 @@ Start a build
 
 ---
 
+## 錯誤 15：Git Push 報錯：`remote: Repository not found.` (帳號命名或儲存庫未建立)
+
+### 1. 錯誤現象與終端機日誌
+使用者在 Windows PowerShell 執行推送指令時發生失敗：
+```text
+PS F:\Antigravity\Rain> git branch -M main
+PS F:\Antigravity\Rain> git remote add origin https://github.com/v1277.chen/Rain.git      
+PS F:\Antigravity\Rain> git push -u origin main
+remote: Repository not found.
+fatal: repository 'https://github.com/v1277.chen/Rain.git/' not found
+```
+
+### 2. 根本原因分析 (RCA)
+此錯誤通常由以下三個常見因素之一引起：
+1. **GitHub 使用者名稱 (Username) 格式不符**：
+   * **GitHub 官方規範**：使用者名稱只能包含英文字母、數字以及單一連字號 `-`（`Username may only contain alphanumeric characters or single hyphens`），**嚴格禁止包含小數點點號 `.`**。
+   * 因此，網址中的 `v1277.chen` 很可能是電子郵件位址前綴、本名或組織顯示名稱，而不是 GitHub 上的真實帳號使用者名稱（例如真實帳號可能是 `v1277chen` 或 `v1277-chen` 等）。
+2. **GitHub 網站上尚未建立 `Rain` 儲存庫 (Repository Does Not Exist)**：
+   * Git 是分散式版本控制系統，本機執行 `git push` 前，必須先登入 GitHub 網頁手動點擊 **「New repository」** 建立名為 `Rain` 的空白儲存庫；否則 GitHub 伺服端無該專案端點，會回報找不到儲存庫。
+3. **儲存庫設為 Private 且本機未通過授權 (Authentication/Permission)**：
+   * 若線上建立的儲存庫為私有 (Private)，且本機端 Git 認證憑證 (Personal Access Token 或 SSH Key) 未能辨識該帳號權限，GitHub 為防止外界探測，會直接回傳 `Repository not found` 而非 `Permission denied`。
+
+### 3. 處理作為與實作修復
+1. **步驟一：確認 GitHub 真實使用者名稱**：
+   * 登入 [GitHub.com](https://github.com/)，點擊右上角個人頭像，查看 `@` 後方的英數字名稱（例如 `@v1277chen`）。
+2. **步驟二：在 GitHub 網站建立儲存庫**：
+   * 前往 [https://github.com/new](https://github.com/new)。
+   * **Repository name** 填寫：`Rain`。
+   * 建議設為 **Public**（若要供 HACS 整合分享使用）或 Private。
+   * ⚠️ **不要勾選**「Add a README file」或「Add .gitignore」（因為本機已有完整檔案）。
+   * 點擊綠色按鈕 **「Create repository」**。
+3. **步驟三：更新本機 Remote URL 並重新推送**：
+   * 在終端機執行 `git remote set-url` 修正為正確的帳號網址：
+     ```powershell
+     git remote set-url origin https://github.com/<真實帳號>/Rain.git
+     git push -u origin main
+     ```
+   * 系統若彈出 GitHub 登入視窗，請授權登入完成推送。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -396,4 +438,5 @@ Start a build
 | **12** | weather-chart-card 實體不符 | `LOVELACE_CARD_GUIDE.md` | 分離氣象預報實體 (`weather.*`) 與雨量感測器 (`sensor.*`) 責任範圍。 | 實體設定正確後圖表正常呈現 |
 | **13** | 住家座標變更自動切換測站 | `cwa_ha_rain_monitor.py` | 實作動態距離評估與 HA `zone.home` 座標自動同步，座標變更自動取最近 4 站。 | 單元測試 7 項全數通過 |
 | **14** | 升級 HACS 整合與多座標支援 | `custom_components/cwa_rain/` | 全面實作標準 HACS Custom Integration，完全免 Token，支援多座標實例與全台快取。 | 單元測試 4 項全數通過 |
+| **15** | Git Push 報錯找不到儲存庫 | `git remote set-url` | 排查 GitHub 命名規則（不支援點號），指引至 GitHub.com 建立空專案並更新遠端網址。 | 修正 Remote URL 後順利推送 |
 

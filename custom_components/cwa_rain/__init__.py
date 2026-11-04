@@ -91,3 +91,4 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         entry (ConfigEntry): 待重新載入之設定項目。
     """
     await hass.config_entries.async_reload(entry.entry_id)
+

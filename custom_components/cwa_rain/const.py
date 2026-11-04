@@ -51,3 +51,4 @@ DEFAULT_AUTO_SYNC_ZONE: Final = True   # 預設自 Zone 自動即時同步經緯
 # 模式選項字串
 MODE_AUTO: Final = "auto"
 MODE_FIXED: Final = "fixed"
+

@@ -162,3 +162,4 @@ class CwaRainActiveStationsSensor(CwaRainBaseSensor):
         if self.coordinator.data:
             return self.coordinator.data.get("active_stations_count", 0)
         return None
+

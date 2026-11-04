@@ -109,3 +109,4 @@ services:
 | `StationEvaluator.select_four_stations(all_stations)` | `(List[Dict[str, Any]])` | `List[Dict[str, Any]]` | 依據模式 (fixed 或 auto) 挑選目標 4 站，計算各站離家距離並由近至遠排序。 |
 | `RainDebounceStateMachine.evaluate(selected_stations)` | `(List[Dict[str, Any]])` | `Dict[str, Any]` | 獨立狀態機，執行多站雨量投票、驟雨判定，並維護連續冷卻計數器。 |
 | `HomeAssistantSync.sync_all(evaluation_result, home_lat, home_lon, selection_mode)` | `(Dict[str, Any], float, float, str)` | `None` | 透過 HA REST API 更新兩個 input_boolean 及一個綜合 sensor。 |
+

@@ -21,6 +21,7 @@
 13. [【功能演進 13】住家經緯度變更時，自動取得氣象署測站並切換最近 4 站機制](#功能演進-13住家經緯度變更時自動取得氣象署測站並切換最近-4-站機制)
 14. [【架構升級 14】由獨立外部 Docker 容器服務全面升級為 HACS 自訂整合 (Custom Integration) 與多座標支援](#架構升級-14由獨立外部-docker-容器服務全面升級為-hacs-自訂整合-custom-integration-與多座標支援)
 15. [【錯誤 15】Git Push 報錯：`remote: Repository not found.` (帳號命名或儲存庫未建立)](#錯誤-15git-push-報錯remote-repository-not-found-帳號命名或儲存庫未建立)
+16. [【錯誤 16】GitHub README LaTeX 公式報錯：`The following macros are not allowed: operatorname`](#錯誤-16github-readme-latex-公式報錯the-following-macros-are-not-allowed-operatorname)
 
 ---
 
@@ -420,6 +421,29 @@ fatal: repository 'https://github.com/v1277.chen/Rain.git/' not found
 
 ---
 
+## 錯誤 16：GitHub README LaTeX 公式報錯：`The following macros are not allowed: operatorname`
+
+### 1. 錯誤現象
+在 GitHub 網站瀏覽 `README.md` 的「1. 測站距離計算 (Haversine 公式)」時，原本的數學公式區塊未正常渲染為數學符號，而是以紅色警示字串顯示：
+```text
+The following macros are not allowed: operatorname
+```
+
+### 2. 根本原因分析 (RCA)
+* GitHub 網頁端所採用的數學公式渲染引擎（KaTeX / MathJax 安全沙箱）基於安全與渲染一致性考量，**限制了部分進階 LaTeX 巨集**。
+* `\operatorname{...}` 屬於被 GitHub 禁用的巨集清單之一，因此當公式中出現 `\operatorname{atan2}` 時，解析器直接中斷並拋出報錯。
+* 此外，`README.md` 前次版本因區塊整併時重複貼上了兩次「核心運作機制深度分析」，造成頁面有重複冗餘區塊。
+
+### 3. 處理作為與實作修復
+* **替換為 GitHub 原生支援之數學語法**：
+  * 將原本的 `c = 2 \cdot \operatorname{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)`
+  * 改寫為 GitHub KaTeX 100% 允許之標準反三角函數語法：
+    $$c = 2 \cdot \arctan\left(\frac{\sqrt{a}}{\sqrt{1-a}}\right)$$
+* **清理重複內容**：移除 `README.md` 中重複之分析章節，並將專案網址統一對齊為使用者真實帳號 `v1277chen`。
+* **驗證方式**：推送更新至 GitHub 後，公式即可正確渲染出圓滑流暢的數學符號。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -439,4 +463,5 @@ fatal: repository 'https://github.com/v1277.chen/Rain.git/' not found
 | **13** | 住家座標變更自動切換測站 | `cwa_ha_rain_monitor.py` | 實作動態距離評估與 HA `zone.home` 座標自動同步，座標變更自動取最近 4 站。 | 單元測試 7 項全數通過 |
 | **14** | 升級 HACS 整合與多座標支援 | `custom_components/cwa_rain/` | 全面實作標準 HACS Custom Integration，完全免 Token，支援多座標實例與全台快取。 | 單元測試 4 項全數通過 |
 | **15** | Git Push 報錯找不到儲存庫 | `git remote set-url` | 排查 GitHub 命名規則（不支援點號），指引至 GitHub.com 建立空專案並更新遠端網址。 | 修正 Remote URL 後順利推送 |
+| **16** | LaTeX 報錯 operatorname 禁用 | `README.md` | GitHub 禁用 `\operatorname` 巨集，改採相容之標準 `\arctan` 語法。 | GitHub 數學公式完美渲染 |
 

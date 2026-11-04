@@ -1,12 +1,12 @@
 {
   "domain": "cwa_rain",
   "name": "中央氣象署雨量監控與預警 (CWA Rain Monitor)",
-  "codeowners": ["@chjspp520"],
+  "codeowners": ["@v1277chen"],
   "config_flow": true,
-  "documentation": "https://github.com/chjspp520/Rain",
+  "documentation": "https://github.com/v1277chen/Rain",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/chjspp520/Rain/issues",
+  "issue_tracker": "https://github.com/v1277chen/Rain/issues",
   "requirements": [],
   "version": "1.0.0"
 }

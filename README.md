@@ -89,7 +89,7 @@ flowchart TD
 2. 點擊右上角的三個點選單 $\to$ **「自訂儲存庫 (Custom repositories)」**。
 3. 在「儲存庫」欄位填入本專案 GitHub 網址：
    ```text
-   https://github.com/chjspp520/Rain
+   https://github.com/v1277chen/Rain
    ```
 4. 類別選擇 **「Integration (整合)」**，點擊 **「新增」**。
 5. 搜尋並點選 **「中央氣象署雨量監控與預警 (CWA Rain Monitor)」**，點擊右下角 **「下載」**。
@@ -108,55 +108,12 @@ flowchart TD
 
 ---
 
-## 三、核心運作機制深度分析
-
-### 1. 測站距離計算 (Haversine 公式)
-為了準確衡量測站對住家的地理代表性，程式採用大圓球面距離公式計算：
-$$a = \sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)$$
-$$c = 2 \cdot \operatorname{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)$$
-$$d = R \cdot c \quad (R = 6371.0 \text{ km})$$
-- 參數 $\phi_1, \phi_2$ 為兩點緯度弧度；$\Delta\lambda$ 為經度差弧度。
-- 可排除過遠測站，確保資料反映的是住家方圓 10 公里內的微氣象。
-
-### 2. 雙重降雨判定邏輯
-- **有雨判定門檻**：單站過去 10 分鐘降水量 $P_{10min} \ge 0.1\text{ mm}$。
-- **正在下雨 (`is_raining`) 觸發條件**（滿足其一）：
-  - **條件 A（多站投票）**：4 站中達到有雨門檻的測站數 $\ge 2$ 站。
-  - **條件 B（單站暴雨）**：4 站中最大雨量 $\ge 1.5\text{ mm}$。
-- **雨雲接近預警 (`rain_approaching_warning`) 觸發條件**（滿足其一）：
-  - 4 站中達到有雨門檻的測站數 $\ge 1$ 站。
-  - 目前系統已判定為 `is_raining == True`。
-
-### 3. 防抖動 (Debounce) 與磁滯冷卻 (Hysteresis)
-氣象觀測常見間歇雨滴（例如：第 5 分鐘下 0.2mm，第 10 分鐘為 0.0mm，第 15 分鐘又下 0.3mm）。
-- **轉為 ON（開啟警戒）**：
-  - 設定 `debounce_on_count = 1`。只要當次輪詢滿足降雨條件，**立即切換為 ON**，保證即時防雨（如立即關閉天窗或收衣）。
-- **轉為 OFF（解除停雨）**：
-  - 設定 `debounce_off_count = 3`。當輪詢未達降雨條件時，啟動**磁滯冷卻計數**。
-  - 必須**連續 3 次輪詢（每 5 分鐘一次，共計 15 分鐘）全部無雨**，才正式切換為 OFF。
-  - 若在 15 分鐘冷卻期間內再度偵測到雨量，冷卻計數立刻歸零，狀態不中斷，避免家電繼電器反覆彈跳損壞。
-
-### 4. 雷達迴波強度反推 (Marshall-Palmer Z-R 關係式)
-中央氣象署雷達常用的反射因子 $Z$ 與降雨率 $R$ 經驗關係為：
-$$Z = 200 \times R^{1.6}$$
-本系統將 10 分鐘累積雨量換算為等效小時雨量：
-$$R = P_{10min} \times 6 \quad (\text{mm/hr})$$
-雷達迴波強度估計值定義為：
-$$\text{dBZ} = 10 \times \log_{10}(Z) = 10 \times \log_{10}(200 \times (6 \cdot P_{10min})^{1.6}) \approx 23.01 + 16 \times \log_{10}(R)$$
-- **對照參考級距**：
-  - $0.0\text{ mm} \implies 0\text{ dBZ}$（無降水）
-  - $0.1\text{ mm} \implies R = 0.6\text{ mm/hr} \implies \approx 19.4\text{ dBZ}$（微弱水氣/毛毛雨）
-  - $0.5\text{ mm} \implies R = 3.0\text{ mm/hr} \implies \approx 30.6\text{ dBZ}$（綠色~黃綠色弱降雨迴波）
-  - $2.0\text{ mm} \implies R = 12.0\text{ mm/hr} \implies \approx 40.3\text{ dBZ}$（黃橙色中強對流降雨）
-
----
-
 ## 四、核心運作機制深度分析
 
 ### 1. 測站距離計算 (Haversine 公式)
 為了準確衡量測站對指定地點（住家或工作地點）的地理代表性，程式採用大圓球面距離公式計算：
 $$a = \sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)$$
-$$c = 2 \cdot \operatorname{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)$$
+$$c = 2 \cdot \arctan\left(\frac{\sqrt{a}}{\sqrt{1-a}}\right)$$
 $$d = R \cdot c \quad (R = 6371.0 \text{ km})$$
 - 參數 $\phi_1, \phi_2$ 為兩點緯度弧度；$\Delta\lambda$ 為經度差弧度。
 - 可排除過遠測站，確保資料反映的是目標地點周邊方圓 10 公里內的即時微氣象。

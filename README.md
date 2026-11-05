@@ -192,21 +192,7 @@ $$\text{dBZ} = 10 \times \log_{10}(Z)$$
 * `sensor.cwa_rain_zhu_jia_you_yu_ce_zhan_shu`（當前周邊有雨測站數）
 
 ### 2. Lovelace 儀表板視覺化展示
-感測器屬性之完整視覺化卡片配置範例請參閱專屬文件：[`LOVELACE_CARD_GUIDE.md`](file:///f:/Antigravity/Rain/LOVELACE_CARD_GUIDE.md)。
+感測器屬性之完整視覺化卡片配置範例請參閱專屬文件：[`LOVELACE_CARD_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/LOVELACE_CARD_GUIDE.md)。
 * 包含 **Mushroom Cards** 氣象晶片卡片
 * 包含 **HA 原生 Markdown 4 站觀測明細表格卡片**（零依賴，純原生）
 * 包含 **Custom:button-card** 動態色彩卡片
-
----
-
-## 八、相關進階文件指南
-
-本專案提供完善之附屬技術文件，供特定需求者查閱：
-1. **備選容器化方案與架構評估**：
-   - [`DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md`](file:///f:/Antigravity/Rain/DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md)（含 HACS vs Add-on vs 獨立 Docker 評估、Portainer Stacks 部署、GitHub Actions 自動發佈說明）。
-2. **PVE 實體伺服器部署手冊**：
-   - [`PVE_PORTAINER_DEPLOY_GUIDE.md`](file:///f:/Antigravity/Rain/PVE_PORTAINER_DEPLOY_GUIDE.md)（針對 Proxmox VE 宿主機與 Portainer 之部署筆記）。
-3. **問題排錯與處置紀錄日誌**：
-   - [`TROUBLESHOOTING_AND_INCIDENT_LOG.md`](file:///f:/Antigravity/Rain/TROUBLESHOOTING_AND_INCIDENT_LOG.md)（記錄開發與部署過程中 16 項問題之 RCA 與處置作為）。
-4. **專案開發里程碑與演進全紀錄**：
-   - [`Walkthrough.md`](file:///f:/Antigravity/Rain/Walkthrough.md)。

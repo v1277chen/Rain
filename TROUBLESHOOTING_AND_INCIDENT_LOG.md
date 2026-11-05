@@ -512,6 +512,51 @@ Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'GRAPH', 'DIR', 'subgraph', 'SQS', 
 
 ---
 
+## 錯誤 20：HA 實體初始化報錯 `NameError: name 'DEFAULT_LOCATION_NAME' is not defined`
+
+### 1. 錯誤現象
+使用者於 Home Assistant 設定流程中新增實體（例如「雨量監控 (公司)」）時，系統日誌拋出如下錯誤阻斷啟動：
+```text
+記錄器: homeassistant.config_entries
+來源: config_entries.py:985
+Error setting up entry 雨量監控 (公司) for cwa_rain
+
+Traceback (most recent call last):
+  File "/usr/src/homeassistant/homeassistant/config_entries.py", line 985, in __async_setup_with_context
+    result = await component.async_setup_entry(hass, self)
+  File "/config/custom_components/cwa_rain/__init__.py", line 44, in async_setup_entry
+    coordinator = CwaRainDataUpdateCoordinator(
+        hass=hass,
+        client=shared_client,
+        entry_data=combined_config
+    )
+  File "/config/custom_components/cwa_rain/coordinator.py", line 419, in __init__
+    self.location_name: str = entry_data.get(CONF_LOCATION_NAME, DEFAULT_LOCATION_NAME)
+                                                                 ^^^^^^^^^^^^^^^^^^^^^
+NameError: name 'DEFAULT_LOCATION_NAME' is not defined. Did you mean: 'CONF_LOCATION_NAME'?
+```
+
+### 2. 根本原因分析 (RCA)
+1. **變數未被匯入 (Unimported Constant)**：
+   * 在 [`custom_components/cwa_rain/const.py`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/const.py) 中確實宣告了 `DEFAULT_LOCATION_NAME = "住家"`。
+   * 但在 [`custom_components/cwa_rain/coordinator.py`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/coordinator.py) 的 `from .const import (...)` 匯入清單中遺漏了 `DEFAULT_LOCATION_NAME`，導致執行到 `self.location_name: str = entry_data.get(CONF_LOCATION_NAME, DEFAULT_LOCATION_NAME)` 時發生 `NameError`。
+2. **測試覆蓋盲點與 Mock 泛型限制**：
+   * 原單元測試著重於 API 快取、狀態機與 Haversine 演算法，未對 `CwaRainDataUpdateCoordinator` 的 `__init__` 進行具體實例化測試。
+   * 在無 Home Assistant 核心的測試環境中，`MockDataUpdateCoordinator` 原先未實作 `__class_getitem__`，使得泛型繼承 `DataUpdateCoordinator[Dict[str, Any]]` 報錯，阻礙了完整元件初始化測試的執行。
+
+### 3. 處理作為與實作修復
+1. **補齊常數匯入**：
+   * 於 [`custom_components/cwa_rain/coordinator.py`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/coordinator.py) 頂部匯入清單加入 `DEFAULT_LOCATION_NAME`。
+2. **強化單元測試與 Mock 支援**：
+   * 於 [`tests/test_custom_component.py`](file:///f:/Antigravity/Rain/tests/test_custom_component.py) 實作支援泛型下標之 `MockGeneric` 與各元件基底類別（`MockCoordinatorEntity`, `MockSensorEntity`, `MockBinarySensorEntity`）。
+   * 新增 `TestCoordinatorSetup` 測試案例，實際傳入包含「公司」地名之 `entry_data` 實例化 Coordinator，驗證屬性賦值與變數解析無誤。
+   * 新增 `TestAllIntegrationComponents` 測試案例，驗證所有感測器與設定流程模組完整匯入。
+3. **版本升級與發布**：
+   * 將 [`custom_components/cwa_rain/manifest.json`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/manifest.json) 版本提升至 `1.0.1`。
+   * 建立 `v1.0.1` 標籤以觸發 GitHub Release 自動化建置發布。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -535,4 +580,5 @@ Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'GRAPH', 'DIR', 'subgraph', 'SQS', 
 | **17** | README 瘦身與聚焦 HACS 使用 | `README.md`, `DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md` | 搬遷 Docker 與 CI/CD 評估至獨立手冊，新增 HA Zone 建立教學，提升文件閱讀性。 | 結構簡潔聚焦 HACS 使用者 |
 | **18** | Mermaid 圖表括號解析報錯 | `README.md` | `subgraph` 標題含括號未加引號，修正為 `subgraph id["Title"]` 標準語法。 | GitHub 流程圖正常渲染 |
 | **19** | 儲存庫更名與 Release 發布 | `manifest.json`, `.github/workflows/release.yml` | 更名為 `cwa-rain-monitor`，建立 v1.0.0 標籤與自動化 ZIP 打包發布 Release。 | GitHub Release 順利生成 |
+| **20** | HA 實體初始化 NameError | `coordinator.py`, `tests/` | `coordinator.py` 遺漏 `DEFAULT_LOCATION_NAME` 匯入；補齊並擴展測試覆蓋與泛型 Mock。 | 單元測試 6 項通過，升級 v1.0.1 |
 

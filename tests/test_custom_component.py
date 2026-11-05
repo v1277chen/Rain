@@ -23,7 +23,6 @@ for mod_name in [
     "homeassistant.config_entries",
     "homeassistant.const",
     "homeassistant.helpers",
-    "homeassistant.helpers.update_coordinator",
     "homeassistant.helpers.aiohttp_client",
     "homeassistant.helpers.entity",
     "homeassistant.helpers.entity_platform",
@@ -35,6 +34,43 @@ for mod_name in [
     if mod_name not in sys.modules:
         sys.modules[mod_name] = MagicMock()
 
+# 為 DataUpdateCoordinator 與實體基底類別提供 Mock 類別，支援泛型下標與繼承
+class MockGeneric:
+    def __class_getitem__(cls, item):
+        return cls
+
+class MockDataUpdateCoordinator(MockGeneric):
+    def __init__(self, hass, logger, name, update_interval):
+        self.hass = hass
+        self.logger = logger
+        self.name = name
+        self.update_interval = update_interval
+        self.data = None
+
+class MockCoordinatorEntity(MockGeneric):
+    def __init__(self, coordinator):
+        self.coordinator = coordinator
+
+class MockSensorEntity(MockGeneric):
+    pass
+
+class MockBinarySensorEntity(MockGeneric):
+    pass
+
+mock_uc = MagicMock()
+mock_uc.DataUpdateCoordinator = MockDataUpdateCoordinator
+mock_uc.CoordinatorEntity = MockCoordinatorEntity
+mock_uc.UpdateFailed = Exception
+sys.modules["homeassistant.helpers.update_coordinator"] = mock_uc
+
+mock_sensor = MagicMock()
+mock_sensor.SensorEntity = MockSensorEntity
+sys.modules["homeassistant.components.sensor"] = mock_sensor
+
+mock_binary_sensor = MagicMock()
+mock_binary_sensor.BinarySensorEntity = MockBinarySensorEntity
+sys.modules["homeassistant.components.binary_sensor"] = mock_binary_sensor
+
 # 將專案路徑加入 sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -43,6 +79,7 @@ from custom_components.cwa_rain.coordinator import (
     calculate_estimated_dbz,
     CwaApiClient,
     RainDebounceStateMachine,
+    CwaRainDataUpdateCoordinator,
 )
 
 
@@ -138,6 +175,43 @@ class TestCwaApiClientCache(unittest.IsolatedAsyncioTestCase):
         # 驗證在 TTL 期限內直接命中快取
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["station_id"], "C2O950")
+
+
+class TestCoordinatorSetup(unittest.TestCase):
+    """
+    測試 CwaRainDataUpdateCoordinator 的初始化與各項屬性
+    """
+
+    def test_coordinator_init(self):
+        mock_hass = MagicMock()
+        mock_client = MagicMock()
+        entry_data = {
+            "api_token": "TEST_TOKEN",
+            "location_name": "公司",
+            "zone_entity": "zone.work",
+            "use_zone": True,
+            "latitude": 22.9900,
+            "longitude": 120.2100,
+            "polling_interval": 300
+        }
+        # 實例化 Coordinator，若有任何未定義變數 (如 DEFAULT_LOCATION_NAME) 將立即報錯
+        coordinator = CwaRainDataUpdateCoordinator(mock_hass, mock_client, entry_data)
+        self.assertEqual(coordinator.location_name, "公司")
+        self.assertEqual(coordinator.current_lat, 22.9900)
+        self.assertEqual(coordinator.current_lon, 120.2100)
+
+
+class TestAllIntegrationComponents(unittest.TestCase):
+    """
+    測試所有 custom_components/cwa_rain 模組之語法完整性與元件載入
+    """
+
+    def test_import_sensors_and_config_flow(self):
+        import custom_components.cwa_rain.config_flow
+        import custom_components.cwa_rain.sensor
+        import custom_components.cwa_rain.binary_sensor
+        self.assertIsNotNone(custom_components.cwa_rain.sensor.CwaRainPrecipitationSensor)
+        self.assertIsNotNone(custom_components.cwa_rain.binary_sensor.CwaRainIsRainingBinarySensor)
 
 
 if __name__ == "__main__":

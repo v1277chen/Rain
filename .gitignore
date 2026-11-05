@@ -1,0 +1,17 @@
+# Python  bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & IDE
+.env
+.venv/
+env/
+venv/
+.idea/
+.vscode/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/

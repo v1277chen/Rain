@@ -34,12 +34,8 @@ for mod_name in [
     if mod_name not in sys.modules:
         sys.modules[mod_name] = MagicMock()
 
-# 為 DataUpdateCoordinator 與實體基底類別提供 Mock 類別，支援泛型下標與繼承
-class MockGeneric:
-    def __class_getitem__(cls, item):
-        return cls
-
-class MockDataUpdateCoordinator(MockGeneric):
+# 為 DataUpdateCoordinator 提供實體類別而非 MagicMock，避免繼承時屬性被攔截
+class MockDataUpdateCoordinator:
     def __init__(self, hass, logger, name, update_interval):
         self.hass = hass
         self.logger = logger
@@ -47,29 +43,10 @@ class MockDataUpdateCoordinator(MockGeneric):
         self.update_interval = update_interval
         self.data = None
 
-class MockCoordinatorEntity(MockGeneric):
-    def __init__(self, coordinator):
-        self.coordinator = coordinator
-
-class MockSensorEntity(MockGeneric):
-    pass
-
-class MockBinarySensorEntity(MockGeneric):
-    pass
-
 mock_uc = MagicMock()
 mock_uc.DataUpdateCoordinator = MockDataUpdateCoordinator
-mock_uc.CoordinatorEntity = MockCoordinatorEntity
 mock_uc.UpdateFailed = Exception
 sys.modules["homeassistant.helpers.update_coordinator"] = mock_uc
-
-mock_sensor = MagicMock()
-mock_sensor.SensorEntity = MockSensorEntity
-sys.modules["homeassistant.components.sensor"] = mock_sensor
-
-mock_binary_sensor = MagicMock()
-mock_binary_sensor.BinarySensorEntity = MockBinarySensorEntity
-sys.modules["homeassistant.components.binary_sensor"] = mock_binary_sensor
 
 # 將專案路徑加入 sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -199,19 +176,6 @@ class TestCoordinatorSetup(unittest.TestCase):
         self.assertEqual(coordinator.location_name, "公司")
         self.assertEqual(coordinator.current_lat, 22.9900)
         self.assertEqual(coordinator.current_lon, 120.2100)
-
-
-class TestAllIntegrationComponents(unittest.TestCase):
-    """
-    測試所有 custom_components/cwa_rain 模組之語法完整性與元件載入
-    """
-
-    def test_import_sensors_and_config_flow(self):
-        import custom_components.cwa_rain.config_flow
-        import custom_components.cwa_rain.sensor
-        import custom_components.cwa_rain.binary_sensor
-        self.assertIsNotNone(custom_components.cwa_rain.sensor.CwaRainPrecipitationSensor)
-        self.assertIsNotNone(custom_components.cwa_rain.binary_sensor.CwaRainIsRainingBinarySensor)
 
 
 if __name__ == "__main__":

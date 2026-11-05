@@ -41,7 +41,7 @@ DEFAULT_LOCATION_NAME: Final = "住家"
 DEFAULT_ZONE_ENTITY: Final = "zone.home"
 DEFAULT_POLLING_INTERVAL: Final = 300  # 5 分鐘輪詢一次
 DEFAULT_RAIN_DETECTED_MM: Final = 0.1  # 單站微雨判定門檻 (mm)
-DEFAULT_STATIONS_RAIN_COUNT: Final = 2  # 一般降雨多站投票門檻 (至少 2 站)
+DEFAULT_STATIONS_RAIN_COUNT: Final = 4  # 一般降雨多站投票門檻 (至少 2 站)
 DEFAULT_HEAVY_RAIN_MM: Final = 1.5     # 單站驟雨瞬間判定門檻 (mm)
 DEFAULT_DEBOUNCE_ON_COUNT: Final = 1   # 開啟降雨所需滿足次數 (1次快速反應)
 DEFAULT_DEBOUNCE_OFF_COUNT: Final = 3  # 解除停雨所需冷卻次數 (3次 = 15分鐘)

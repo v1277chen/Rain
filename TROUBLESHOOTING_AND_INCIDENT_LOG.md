@@ -24,6 +24,7 @@
 16. [【錯誤 16】GitHub README LaTeX 公式報錯：`The following macros are not allowed: operatorname`](#錯誤-16github-readme-latex-公式報錯the-following-macros-are-not-allowed-operatorname)
 17. [【文件優化 17】README 瘦身聚焦 HACS 使用者體驗，新增 Zone 設定教學並拆分進階手冊](#文件優化-17readme-瘦身聚焦-hacs-使用者體驗新增-zone-設定教學並拆分進階手冊)
 18. [【錯誤 18】GitHub Mermaid 流程圖報錯：`Parse error on line 4 ... got 'PS'`](#錯誤-18github-mermaid-流程圖報錯parse-error-on-line-4--got-ps)
+19. [【專案發布 19】儲存庫正式更名為 `cwa-rain-monitor` 並發布 v1.0.0 正式版 Release](#專案發布-19儲存庫正式更名為-cwa-rain-monitor-並發布-v100-正式版-release)
 
 ---
 
@@ -489,6 +490,28 @@ Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'GRAPH', 'DIR', 'subgraph', 'SQS', 
 
 ---
 
+## 專案發布 19：儲存庫正式更名為 `cwa-rain-monitor` 並發布 v1.0.0 正式版 Release
+
+### 1. 需求背景與核心問題
+1. **GitHub 命名規範與社群標準**：
+   * 原儲存庫名稱 `Rain` 較為寬泛，使用者期望改為更具象徵性的「CWA Rain Monitor」。
+   * GitHub 儲存庫的 URL slug 不允許包含空格，依據開源社群最佳慣例採用連字號全小寫 `cwa-rain-monitor`（顯示名稱為 CWA Rain Monitor）。
+2. **HACS Release 發布標準**：
+   * Home Assistant HACS 整合依賴 GitHub Releases 作為版本追蹤與更新提示機制。
+   * 發布正式版本 `v1.0.0`，並提供自動化 ZIP 資產打包，便於手動或 HACS 安裝。
+
+### 2. 處理作為與實作修復
+1. **專案程式碼與文件 URL 全面更換**：
+   * 更新 [`custom_components/cwa_rain/manifest.json`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/manifest.json) 的 `documentation` 與 `issue_tracker` 網址至 `https://github.com/v1277chen/cwa-rain-monitor`。
+   * 更新 [`README.md`](file:///f:/Antigravity/Rain/README.md) 中的 HACS 自訂儲存庫安裝網址。
+2. **配置 GitHub Release 自動化 Action**：
+   * 新增 [`.github/workflows/release.yml`](file:///f:/Antigravity/Rain/.github/workflows/release.yml)，當推送 `v*` 標籤時，自動將 `custom_components/cwa_rain` 壓縮打包為 `cwa_rain.zip` 並發布正式 Release。
+3. **本地 Git 建立 Release Tag**：
+   * 本地建立正式標籤 `v1.0.0`。
+   * 指引使用者在 GitHub 網頁進行 Repository 重命名，並推送代碼與標籤。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -511,4 +534,5 @@ Expecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'GRAPH', 'DIR', 'subgraph', 'SQS', 
 | **16** | LaTeX 報錯 operatorname 禁用 | `README.md` | GitHub 禁用 `\operatorname` 巨集，改採相容之標準 `\arctan` 語法。 | GitHub 數學公式完美渲染 |
 | **17** | README 瘦身與聚焦 HACS 使用 | `README.md`, `DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md` | 搬遷 Docker 與 CI/CD 評估至獨立手冊，新增 HA Zone 建立教學，提升文件閱讀性。 | 結構簡潔聚焦 HACS 使用者 |
 | **18** | Mermaid 圖表括號解析報錯 | `README.md` | `subgraph` 標題含括號未加引號，修正為 `subgraph id["Title"]` 標準語法。 | GitHub 流程圖正常渲染 |
+| **19** | 儲存庫更名與 Release 發布 | `manifest.json`, `.github/workflows/release.yml` | 更名為 `cwa-rain-monitor`，建立 v1.0.0 標籤與自動化 ZIP 打包發布 Release。 | GitHub Release 順利生成 |
 

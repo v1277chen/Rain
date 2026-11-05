@@ -5,10 +5,10 @@
     "@v1277chen"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/v1277chen/Rain",
+  "documentation": "https://github.com/v1277chen/cwa-rain-monitor",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/v1277chen/Rain/issues",
+  "issue_tracker": "https://github.com/v1277chen/cwa-rain-monitor/issues",
   "requirements": [],
   "version": "1.0.0"
 }

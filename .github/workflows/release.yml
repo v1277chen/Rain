@@ -1,0 +1,37 @@
+# ==============================================================================
+# GitHub Actions 工作流程：自動發布 GitHub Releases 與 HACS 壓縮包
+# 檔案路徑：.github/workflows/release.yml
+# 功能：當建立並推送 v* 標籤時，自動建立 Release 並上傳 cwa_rain.zip 資產
+# ==============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: 發布 Release 與組件打包
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簽出專案原始碼 (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 打包 HACS 自訂整合組件為 ZIP
+        run: |
+          cd custom_components/cwa_rain
+          zip -r ../../cwa_rain.zip .
+          cd ../..
+
+      - name: 建立 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cwa_rain.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false

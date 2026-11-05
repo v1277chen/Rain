@@ -84,7 +84,7 @@ flowchart TD
 2. 點擊右上角的三個點選單 $\to$ **「自訂儲存庫 (Custom repositories)」**。
 3. 在「儲存庫」欄位填入本專案 GitHub 網址：
    ```text
-   https://github.com/v1277chen/Rain
+   https://github.com/v1277chen/cwa-rain-monitor
    ```
 4. 類別選擇 **「Integration (整合)」**，點擊 **「新增」**。
 5. 搜尋並點選 **「中央氣象署雨量監控與預警 (CWA Rain Monitor)」**，點擊右下角 **「下載」**。

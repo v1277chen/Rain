@@ -183,13 +183,20 @@ $$\text{dBZ} = 10 \times \log_{10}(Z)$$
 
 ## 七、產生之感測器實體與 Lovelace 儀表板卡片範例
 
-### 1. 實體清單 (以「住家」為例)
-系統將自動建立專屬 Device 裝置，並包含以下實體：
-* `binary_sensor.cwa_rain_zhu_jia_mu_qian_zheng_zai_xia_yu`（目前正在下雨）
-* `binary_sensor.cwa_rain_zhu_jia_yu_yun_jie_jin_yu_jing`（雨雲接近預警）
-* `sensor.cwa_rain_zhu_jia_guo_qu_10_fen_zhong_jiang_shui_liang`（過去 10 分鐘降水量，附帶 4 站完整明細屬性）
-* `sensor.cwa_rain_zhu_jia_tui_gu_lei_da_hui_bo`（推估雷達迴波強度 dBZ）
-* `sensor.cwa_rain_zhu_jia_you_yu_ce_zhan_shu`（當前周邊有雨測站數）
+### 1. 實體清單規範 (回歸經典 Docker 簡短實體架構)
+系統將自動建立專屬 Device 裝置，並採用極簡、乾淨之命名結構，杜絕過長之拼音實體代碼：
+
+#### (1) 住家 (預設監控地點，無後綴)
+* `sensor.cwa_rain_monitor`（氣象署雨量綜合監控，數值為 10 分鐘雨量，並整合推估雷達迴波 dBZ、有雨測站數與 4 站即時明細等完整屬性）
+* `binary_sensor.is_raining`（目前正在下雨，防抖動開關）
+* `binary_sensor.rain_approaching_warning`（雨雲接近預警）
+* *(相容機制)*：系統背景自動即時同步更新 `input_boolean.is_raining` 與 `input_boolean.rain_approaching_warning`，過往 Docker 版自動化腳本與卡片無痛相容。
+
+#### (2) 多地點 (以「公司」為例，附帶簡短識別後綴)
+* `sensor.cwa_rain_monitor_gong_si`（氣象署雨量綜合監控 (公司)）
+* `binary_sensor.is_raining_gong_si`（目前正在下雨 (公司)）
+* `binary_sensor.rain_approaching_warning_gong_si`（雨雲接近預警 (公司)）
+* *(相容機制)*：同步更新 `input_boolean.is_raining_gong_si` 與 `input_boolean.rain_approaching_warning_gong_si`。
 
 ### 2. Lovelace 儀表板視覺化展示
 感測器屬性之完整視覺化卡片配置範例請參閱專屬文件：[`LOVELACE_CARD_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/LOVELACE_CARD_GUIDE.md)。

@@ -52,3 +52,47 @@ DEFAULT_AUTO_SYNC_ZONE: Final = True   # 預設自 Zone 自動即時同步經緯
 MODE_AUTO: Final = "auto"
 MODE_FIXED: Final = "fixed"
 
+# 地點名稱與簡短 Slug 對照表
+COMMON_LOCATION_SLUGS: Final = {
+    "住家": "",
+    "家": "",
+    "home": "",
+    "Home": "",
+    "公司": "gong_si",
+    "辦公室": "office",
+    "工作": "work",
+    "老家": "lao_jia",
+    "學校": "school",
+}
+
+
+def get_location_slug(location_name: str) -> str:
+    """
+    根據地點名稱取得簡潔之英數字元識別代碼 (Slug)。
+
+    用途說明：
+        防止 Home Assistant 預設產生長達數十字元的中文字拼音 entity_id
+        (例如：binary_sensor.zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_mu_qian_zheng_zai_xia_yu)。
+        當地點為預設「住家」時回傳空字串 (不加後綴以吻合 Docker 經典實體模式)；
+        其餘地點則回傳乾淨之簡短識別代碼 (如 "gong_si")。
+
+    參數說明：
+        location_name (str): 使用者於 Config Entry 中設定之地點名稱。
+
+    回傳值：
+        str: 簡短的 Slug 字串，若為住家則回傳空字串 ""。
+    """
+    if not location_name:
+        return ""
+    name_clean = str(location_name).strip()
+    if name_clean in COMMON_LOCATION_SLUGS:
+        return COMMON_LOCATION_SLUGS[name_clean]
+
+    try:
+        from homeassistant.util import slugify
+        return slugify(name_clean)
+    except Exception:
+        import re
+        return re.sub(r"[^\w]+", "_", name_clean).strip("_").lower()
+
+

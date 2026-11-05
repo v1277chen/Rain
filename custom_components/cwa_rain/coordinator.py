@@ -65,6 +65,7 @@ from .const import (
     DEFAULT_AUTO_SYNC_ZONE,
     MODE_AUTO,
     MODE_FIXED,
+    get_location_slug,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -522,6 +523,39 @@ class CwaRainDataUpdateCoordinator(DataUpdateCoordinator[Dict[str, Any]]):
             evaluation["longitude"] = self.current_lon
             evaluation["selection_mode"] = self.selection_mode
             evaluation["zone_entity"] = self.zone_entity
+
+            # 6. 自動向 Home Assistant 狀態機同步相容性 input_boolean (零摩擦無痛向下相容 Docker 版本)
+            try:
+                loc_slug = get_location_slug(self.location_name)
+                bool_suffix = f"_{loc_slug}" if loc_slug else ""
+                name_suffix = f" ({self.location_name})" if loc_slug else ""
+
+                # 同步 input_boolean.is_raining 或 input_boolean.is_raining_gong_si
+                self.hass.states.async_set(
+                    f"input_boolean.is_raining{bool_suffix}",
+                    "on" if evaluation["is_raining"] else "off",
+                    {
+                        "friendly_name": f"目前正在下雨{name_suffix}",
+                        "icon": "mdi:weather-pouring" if evaluation["is_raining"] else "mdi:weather-sunny",
+                        "max_rain_10min": evaluation["max_rain_10min"],
+                        "estimated_dbz": evaluation["estimated_dbz"],
+                        "last_updated": evaluation["timestamp"]
+                    }
+                )
+
+                # 同步 input_boolean.rain_approaching_warning 或 input_boolean.rain_approaching_warning_gong_si
+                self.hass.states.async_set(
+                    f"input_boolean.rain_approaching_warning{bool_suffix}",
+                    "on" if evaluation["rain_approaching"] else "off",
+                    {
+                        "friendly_name": f"雨雲接近預警{name_suffix}",
+                        "icon": "mdi:weather-partly-rainy" if evaluation["rain_approaching"] else "mdi:weather-cloudy",
+                        "active_stations": evaluation["active_stations_count"],
+                        "last_updated": evaluation["timestamp"]
+                    }
+                )
+            except Exception as sync_exc:
+                _LOGGER.debug("【%s】同步相容 input_boolean 狀態時略過: %s", self.location_name, sync_exc)
 
             return evaluation
 

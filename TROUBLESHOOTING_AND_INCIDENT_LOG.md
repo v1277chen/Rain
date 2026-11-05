@@ -557,6 +557,42 @@ NameError: name 'DEFAULT_LOCATION_NAME' is not defined. Did you mean: 'CONF_LOCA
 
 ---
 
+## 結構優化 21：HACS 實體名稱過長 (拼音堆疊) 與感測器零碎分散，回歸 Docker 經典單一綜合實體架構
+
+### 1. 錯誤現象與使用者困擾
+使用者自 Docker 版本升級至 HACS 自訂整合後，發現 Home Assistant 自動生成的實體代碼極其冗長，且實體數量與結構與過往 Docker 版本不一致：
+* **過長拼音實體代碼**（長達 70 多字元）：
+  * `binary_sensor.zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_mu_qian_zheng_zai_xia_yu`
+  * `sensor.zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_you_yu_ce_zhan_shu`
+  * `binary_sensor.zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_yu_yun_jie_jin_yu_jing`
+  * `sensor.zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_tui_gu_lei_da_hui_bo`
+  * `sensor.zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_guo_qu_10_fen_zhong_jiang_shui_liang`
+* **卡片不相容**：
+  在過往 Docker 模式中，所有數據（雷達迴波、有雨站數、4 站觀測明細）均整合於 `sensor.cwa_rain_monitor` 的屬性中，且開關為 `input_boolean.is_raining` 與 `input_boolean.rain_approaching_warning`。拆為多個感測器導致先前手冊 [`LOVELACE_CARD_GUIDE.md`](file:///f:/Antigravity/Rain/LOVELACE_CARD_GUIDE.md) 中已配置好的 Markdown 4 站明細表格卡片與自動化邏輯失效。
+
+### 2. 根本原因分析 (RCA)
+1. **Home Assistant 自動命名規則 (`has_entity_name = True`)**：
+   * 當實體設定 `_attr_has_entity_name = True` 時，HA 會將裝置名稱（`中央氣象署雨量監控 (公司)`）以拼音 slug 化為 `zhong_yang_qi_xiang_shu_yu_liang_jian_kong_gong_si_`，並強制拼接於實體名稱（`mu_qian_zheng_zai_xia_yu`）前方，產生過長代碼。
+2. **實體結構分歧 (Entity Dispersion)**：
+   * 初版 HACS 實作將降水量、雷達迴波、有雨站數拆分成 3 個 Sensor 類別，偏離了 Docker 版單一強大實體的設計初衷。
+
+### 3. 處理作為與實作修復
+1. **回歸單一綜合感測器 (`CwaRainMonitorSensor`)**：
+   * 移除獨立之 dBZ 與站數感測器，整合為單一 `CwaRainMonitorSensor`。
+   * 其狀態主值為 10 分鐘最大累積雨量 (mm)，並在 `extra_state_attributes` 完整收錄 `estimated_dbz`、`active_stations_count`、`monitored_stations`（4 站名稱、距離、雨量、降雨狀態）等屬性，完全契合 `LOVELACE_CARD_GUIDE.md` 卡片之模板要求。
+2. **精簡實體命名機制 (`get_location_slug` & `has_entity_name = False`)**：
+   * 明確設定 `_attr_has_entity_name = False`，杜絕 HA 拼接裝置中文拼音前綴。
+   * 新增 `get_location_slug` 智慧轉換函式：
+     * **住家 (預設)**：不帶後綴，生成 `sensor.cwa_rain_monitor`、`binary_sensor.is_raining`、`binary_sensor.rain_approaching_warning`。
+     * **多地點 (如公司)**：附帶簡潔後綴，生成 `sensor.cwa_rain_monitor_gong_si`、`binary_sensor.is_raining_gong_si`、`binary_sensor.rain_approaching_warning_gong_si`。
+3. **雙軌相容機制 (`input_boolean` 背景同步)**：
+   * 在協調器更新週期中，自動以 `self.hass.states.async_set` 同步更新 `input_boolean.is_raining` 與 `input_boolean.rain_approaching_warning`（多地點則同步帶後綴版本），確保先前自動化與卡片零改動平滑過渡。
+4. **單元測試與版本升級**：
+   * 新增 `TestEntityNamingAndDockerCompatibility` 驗證住家與公司之實體代碼與 Friendly Name。
+   * 版本升級至 `1.0.2` 並建立發布標籤 `v1.0.2`。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -581,4 +617,4 @@ NameError: name 'DEFAULT_LOCATION_NAME' is not defined. Did you mean: 'CONF_LOCA
 | **18** | Mermaid 圖表括號解析報錯 | `README.md` | `subgraph` 標題含括號未加引號，修正為 `subgraph id["Title"]` 標準語法。 | GitHub 流程圖正常渲染 |
 | **19** | 儲存庫更名與 Release 發布 | `manifest.json`, `.github/workflows/release.yml` | 更名為 `cwa-rain-monitor`，建立 v1.0.0 標籤與自動化 ZIP 打包發布 Release。 | GitHub Release 順利生成 |
 | **20** | HA 實體初始化 NameError | `coordinator.py`, `tests/` | `coordinator.py` 遺漏 `DEFAULT_LOCATION_NAME` 匯入；補齊並擴展測試覆蓋與泛型 Mock。 | 單元測試 6 項通過，升級 v1.0.1 |
-
+| **21** | HACS 實體名稱過長與零碎分散 | `sensor.py`, `binary_sensor.py`, `const.py` | 停用 has_entity_name，回歸單一綜合感測器與簡短 ID，同步支援 input_boolean。 | 單元測試 8 項全數通過，升級 v1.0.2 |

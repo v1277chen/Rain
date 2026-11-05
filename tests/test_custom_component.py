@@ -34,8 +34,20 @@ for mod_name in [
     if mod_name not in sys.modules:
         sys.modules[mod_name] = MagicMock()
 
-# 為 DataUpdateCoordinator 提供實體類別而非 MagicMock，避免繼承時屬性被攔截
-class MockDataUpdateCoordinator:
+# 為 DataUpdateCoordinator 與實體基底類別提供 Mock 類別，支援泛型下標與多重繼承
+class MockGeneric:
+    def __class_getitem__(cls, item):
+        return cls
+
+    @property
+    def name(self):
+        return getattr(self, "_attr_name", getattr(self, "_name", None))
+
+    @name.setter
+    def name(self, val):
+        self._name = val
+
+class MockDataUpdateCoordinator(MockGeneric):
     def __init__(self, hass, logger, name, update_interval):
         self.hass = hass
         self.logger = logger
@@ -43,10 +55,29 @@ class MockDataUpdateCoordinator:
         self.update_interval = update_interval
         self.data = None
 
+class MockCoordinatorEntity(MockGeneric):
+    def __init__(self, coordinator):
+        self.coordinator = coordinator
+
+class MockSensorEntity(MockGeneric):
+    pass
+
+class MockBinarySensorEntity(MockGeneric):
+    pass
+
 mock_uc = MagicMock()
 mock_uc.DataUpdateCoordinator = MockDataUpdateCoordinator
+mock_uc.CoordinatorEntity = MockCoordinatorEntity
 mock_uc.UpdateFailed = Exception
 sys.modules["homeassistant.helpers.update_coordinator"] = mock_uc
+
+mock_sensor = MagicMock()
+mock_sensor.SensorEntity = MockSensorEntity
+sys.modules["homeassistant.components.sensor"] = mock_sensor
+
+mock_binary_sensor = MagicMock()
+mock_binary_sensor.BinarySensorEntity = MockBinarySensorEntity
+sys.modules["homeassistant.components.binary_sensor"] = mock_binary_sensor
 
 # 將專案路徑加入 sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -171,11 +202,75 @@ class TestCoordinatorSetup(unittest.TestCase):
             "longitude": 120.2100,
             "polling_interval": 300
         }
-        # 實例化 Coordinator，若有任何未定義變數 (如 DEFAULT_LOCATION_NAME) 將立即報錯
         coordinator = CwaRainDataUpdateCoordinator(mock_hass, mock_client, entry_data)
         self.assertEqual(coordinator.location_name, "公司")
         self.assertEqual(coordinator.current_lat, 22.9900)
         self.assertEqual(coordinator.current_lon, 120.2100)
+
+
+class TestEntityNamingAndDockerCompatibility(unittest.TestCase):
+    """
+    測試實體命名是否完美回歸 Docker 模式，避免過長中文拼音
+    """
+
+    def test_get_location_slug(self):
+        from custom_components.cwa_rain.const import get_location_slug
+        # 住家回傳空字串 (不加後綴)
+        self.assertEqual(get_location_slug("住家"), "")
+        self.assertEqual(get_location_slug("home"), "")
+        self.assertEqual(get_location_slug(""), "")
+        # 公司與自訂地點回傳簡短 slug
+        self.assertEqual(get_location_slug("公司"), "gong_si")
+        self.assertEqual(get_location_slug("工作"), "work")
+        self.assertEqual(get_location_slug("辦公室"), "office")
+
+    def test_entity_ids_home(self):
+        from custom_components.cwa_rain.sensor import CwaRainMonitorSensor
+        from custom_components.cwa_rain.binary_sensor import (
+            CwaRainIsRainingBinarySensor,
+            CwaRainApproachingBinarySensor,
+        )
+
+        mock_coord = MagicMock()
+        mock_coord.location_name = "住家"
+        mock_entry = MagicMock()
+        mock_entry.entry_id = "test_entry_home"
+
+        sensor = CwaRainMonitorSensor(mock_coord, mock_entry)
+        self.assertEqual(sensor.entity_id, "sensor.cwa_rain_monitor")
+        self.assertEqual(sensor.name, "氣象署雨量綜合監控")
+
+        bin_raining = CwaRainIsRainingBinarySensor(mock_coord, mock_entry)
+        self.assertEqual(bin_raining.entity_id, "binary_sensor.is_raining")
+        self.assertEqual(bin_raining.name, "目前正在下雨")
+
+        bin_warning = CwaRainApproachingBinarySensor(mock_coord, mock_entry)
+        self.assertEqual(bin_warning.entity_id, "binary_sensor.rain_approaching_warning")
+        self.assertEqual(bin_warning.name, "雨雲接近預警")
+
+    def test_entity_ids_company(self):
+        from custom_components.cwa_rain.sensor import CwaRainMonitorSensor
+        from custom_components.cwa_rain.binary_sensor import (
+            CwaRainIsRainingBinarySensor,
+            CwaRainApproachingBinarySensor,
+        )
+
+        mock_coord = MagicMock()
+        mock_coord.location_name = "公司"
+        mock_entry = MagicMock()
+        mock_entry.entry_id = "test_entry_company"
+
+        sensor = CwaRainMonitorSensor(mock_coord, mock_entry)
+        self.assertEqual(sensor.entity_id, "sensor.cwa_rain_monitor_gong_si")
+        self.assertEqual(sensor.name, "氣象署雨量綜合監控 (公司)")
+
+        bin_raining = CwaRainIsRainingBinarySensor(mock_coord, mock_entry)
+        self.assertEqual(bin_raining.entity_id, "binary_sensor.is_raining_gong_si")
+        self.assertEqual(bin_raining.name, "目前正在下雨 (公司)")
+
+        bin_warning = CwaRainApproachingBinarySensor(mock_coord, mock_entry)
+        self.assertEqual(bin_warning.entity_id, "binary_sensor.rain_approaching_warning_gong_si")
+        self.assertEqual(bin_warning.name, "雨雲接近預警 (公司)")
 
 
 if __name__ == "__main__":

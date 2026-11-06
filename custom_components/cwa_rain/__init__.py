@@ -6,6 +6,7 @@
     包含初始化、轉發實體平台註冊 (Platforms forwarding)、重新載入與卸載。
 """
 
+import os
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -14,6 +15,38 @@ from .const import DOMAIN, PLATFORMS, CONF_API_TOKEN
 from .coordinator import CwaApiClient, CwaRainDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """
+    非同步設定 cwa_rain 全域元件環境。
+
+    用途說明：
+        註冊元件專屬的靜態 HTTP 資源路徑 (/cwa_rain_static/CWA.png 與 /cwa_rain_static/icon.png)，
+        使 Home Assistant 前端介面、Lovelace 卡片、通知訊息均能直接載入氣象署專屬品牌圖示。
+
+    參數說明：
+        hass (HomeAssistant): Home Assistant 核心實體。
+        config (dict): YAML 全域配置字典 (本整合主要透過 UI Config Flow 設定)。
+
+    回傳值：
+        bool: 固定回傳 True。
+    """
+    cwa_png_path = os.path.join(os.path.dirname(__file__), "CWA.png")
+    icon_png_path = os.path.join(os.path.dirname(__file__), "icon.png")
+
+    # 若 Home Assistant HTTP 伺服器已啟動，註冊靜態圖檔路徑
+    if hasattr(hass, "http") and hasattr(hass.http, "register_static_path"):
+        try:
+            if os.path.exists(cwa_png_path):
+                hass.http.register_static_path("/cwa_rain_static/CWA.png", cwa_png_path, cache_headers=True)
+            if os.path.exists(icon_png_path):
+                hass.http.register_static_path("/cwa_rain_static/icon.png", icon_png_path, cache_headers=True)
+            _LOGGER.debug("成功註冊氣象署圖示靜態路徑 /cwa_rain_static/CWA.png")
+        except Exception as exc:
+            _LOGGER.debug("註冊氣象署靜態圖檔路徑時略過: %s", exc)
+
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

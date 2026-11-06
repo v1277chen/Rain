@@ -70,7 +70,7 @@ class CwaRainBaseBinarySensor(CoordinatorEntity[CwaRainDataUpdateCoordinator], B
             name=f"中央氣象署雨量監控 ({self.coordinator.location_name})",
             manufacturer="交通部中央氣象署 (CWA)",
             model="自動雨量觀測整合系統 (O-A0002-001)",
-            sw_version="1.0.2",
+            sw_version="1.0.3",
         )
 
 

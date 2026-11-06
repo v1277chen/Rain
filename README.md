@@ -19,7 +19,8 @@
   - [3. 防抖動 (Debounce) 與磁滯冷卻 (Hysteresis)](#3-防抖動-debounce-與磁滯冷卻-hysteresis)
   - [4. 雷達迴波強度反推 (Marshall-Palmer Z-R 關係式)](#4-雷達迴波強度反推-marshall-palmer-z-r-關係式)
 - [七、產生之感測器實體與 Lovelace 儀表板卡片範例](#七產生之感測器實體與-lovelace-儀表板卡片範例)
-- [八、相關進階文件指南](#八相關進階文件指南)
+- [八、Home Assistant 內建自動化與 Node-RED 實戰範例](#八home-assistant-內建自動化與-node-red-實戰範例)
+- [九、相關進階文件指南](#九相關進階文件指南)
 
 ---
 
@@ -41,10 +42,9 @@ flowchart TD
     end
     
     E1 --> F1["裝置：中央氣象署雨量監控 (住家)"]
-    F1 --> G1["binary_sensor.*_is_raining (目前正在下雨)"]
-    F1 --> G2["binary_sensor.*_rain_approaching (雨雲接近)"]
-    F1 --> G3["sensor.*_precipitation (10分鐘雨量 & 4站明細)"]
-    F1 --> G4["sensor.*_radar_dbz (推估雷達迴波強度)"]
+    F1 --> G1["binary_sensor.is_raining (目前正在下雨)"]
+    F1 --> G2["binary_sensor.rain_approaching_warning (雨雲接近)"]
+    F1 --> G3["sensor.cwa_rain_monitor (雨量、雷達迴波 & 4站明細)"]
     
     E2 --> F2["裝置：中央氣象署雨量監控 (工作地點)"]
     F2 --> H1["工作地點各項專屬感測器"]
@@ -203,3 +203,46 @@ $$\text{dBZ} = 10 \times \log_{10}(Z)$$
 * 包含 **Mushroom Cards** 氣象晶片卡片
 * 包含 **HA 原生 Markdown 4 站觀測明細表格卡片**（零依賴，純原生）
 * 包含 **Custom:button-card** 動態色彩卡片
+
+### 3. 官方 CWA.png 品牌圖示支援
+本整合自 `v1.0.3` 起，內建交通部中央氣象署專屬品牌圖示：
+* **整合與 HACS 標誌**：在 Home Assistant「裝置與服務」整合卡片與 HACS 商店清單中，自動呈現氣象署官方圖示。
+* **實體原生圖片 (`entity_picture`)**：`sensor.cwa_rain_monitor` 預設綁定氣象署專屬圓形圖標，在支援的卡片（如實體清單、Tile 卡片、Mushroom 卡片）中直接顯示官方標誌。
+* **靜態圖檔路徑**：全系統可直接呼叫 `/cwa_rain_static/CWA.png`，無需手動複製至 `www/` 資料夾。
+
+---
+
+## 八、Home Assistant 內建自動化與 Node-RED 實戰範例
+
+本專案提供完善之自動化指南 [`AUTOMATION_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/AUTOMATION_GUIDE.md)，包含豐富之生產級代碼：
+
+### 1. Home Assistant 原生自動化 (YAML)
+* **驟雨緊急防護**：下雨立即關閉陽台窗戶與電動遮雨棚，並發送附帶 CWA 圖示與雷達迴波 dBZ 的手機緊急推播。
+* **雨雲接近預警**：白天時段透過智慧音箱（Google Nest、HomePod、小愛音箱）播放語音提醒收取晾曬衣物。
+* **停雨安全復原**：連續 15 分鐘無雨確認雨勢停歇後，自動重新開啟氣窗通風。
+* **多地點下班提醒**：平日下班時段若公司周邊有雨，主動提醒備傘。
+
+### 2. Node-RED 視覺化流程 (可直接匯入)
+* 提供完整之 **Node-RED Flow JSON**，支援一鍵匯入。
+* 涵蓋狀態監聽、dBZ 雷達迴波分級運算、智慧音箱語音廣播、手機推播及設備雙向控制。
+
+完整 YAML 腳本與可複製之 Node-RED JSON 請詳閱：
+👉 **[`AUTOMATION_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/AUTOMATION_GUIDE.md)**
+
+---
+
+## 九、相關進階文件指南
+
+本專案提供完善之專題手冊，便於特定需求者查閱：
+1. **降雨聯動自動化與 Node-RED 指南**：
+   - [`AUTOMATION_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/AUTOMATION_GUIDE.md)（含原生 YAML 關窗廣播、多地點下班提醒、Node-RED 一鍵匯入 Flow）。
+2. **Lovelace 儀表板卡片配置手冊**：
+   - [`LOVELACE_CARD_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/LOVELACE_CARD_GUIDE.md)（含 Markdown 4 站對齊明細表格、Mushroom Cards、button-card）。
+3. **備選容器化方案與架構評估**：
+   - [`DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/DEPLOYMENT_ALTERNATIVES_AND_EVALUATION.md)（含 HACS vs Add-on vs 獨立 Docker 深度評估、Portainer Stacks 部署）。
+4. **PVE 實體伺服器部署手冊**：
+   - [`PVE_PORTAINER_DEPLOY_GUIDE.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/PVE_PORTAINER_DEPLOY_GUIDE.md)（針對 Proxmox VE 宿主機之筆記）。
+5. **問題排錯與處置紀錄日誌**：
+   - [`TROUBLESHOOTING_AND_INCIDENT_LOG.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/TROUBLESHOOTING_AND_INCIDENT_LOG.md)（累積記錄 22 項問題之 RCA 與處置作為）。
+6. **專案開發里程碑與演進全紀錄**：
+   - [`Walkthrough.md`](https://github.com/v1277chen/cwa-rain-monitor/blob/main/Walkthrough.md)。

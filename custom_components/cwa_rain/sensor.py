@@ -86,6 +86,8 @@ class CwaRainMonitorSensor(CoordinatorEntity[CwaRainDataUpdateCoordinator], Sens
         self._attr_native_unit_of_measurement = "mm"
         self._attr_device_class = SensorDeviceClass.PRECIPITATION
         self._attr_state_class = SensorStateClass.MEASUREMENT
+        # 設置氣象署專屬品牌圖示 (在支援的 HA 介面直接渲染圓形 CWA.png 圖片)
+        self._attr_entity_picture = "/cwa_rain_static/CWA.png"
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -95,7 +97,7 @@ class CwaRainMonitorSensor(CoordinatorEntity[CwaRainDataUpdateCoordinator], Sens
             name=f"中央氣象署雨量監控 ({self.coordinator.location_name})",
             manufacturer="交通部中央氣象署 (CWA)",
             model="自動雨量觀測整合系統 (O-A0002-001)",
-            sw_version="1.0.2",
+            sw_version="1.0.3",
         )
 
     @property
@@ -131,6 +133,7 @@ class CwaRainMonitorSensor(CoordinatorEntity[CwaRainDataUpdateCoordinator], Sens
 
         return {
             "friendly_name": self._attr_name,
+            "entity_picture": "/cwa_rain_static/CWA.png",
             "max_rain_10min": max_rain,
             "estimated_dbz": dbz,
             "is_raining": is_raining,

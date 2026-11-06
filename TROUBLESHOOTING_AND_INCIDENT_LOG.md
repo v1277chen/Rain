@@ -593,6 +593,26 @@ NameError: name 'DEFAULT_LOCATION_NAME' is not defined. Did you mean: 'CONF_LOCA
 
 ---
 
+## 需求 22：新增 Home Assistant 官方 CWA 品牌圖示與完整自動化實戰手冊 (含 Node-RED 流程)
+
+### 1. 需求背景與核心問題
+1. **整合缺少專屬圖示**：原 HACS 整合未包含標準 `icon.png` 與 `logo.png`，在 Home Assistant「設定 $	o$ 裝置與服務」卡片以及 HACS 商店清單中顯示為通用預設圖示；此外，Lovelace 儀表板卡片與推播通知若要引用氣象署標誌，使用者必須手動建立 `www/` 資料夾才能存取。
+2. **缺乏全場景自動化範例**：整合已提供 `binary_sensor.is_raining`（正在下雨，15分鐘冷卻）、`binary_sensor.rain_approaching_warning`（雨雲接近）與 `sensor.cwa_rain_monitor`，但使用者缺乏可直接複製貼上的實務自動化腳本，特別是智慧音箱 TTS 廣播、電動遮雨棚/氣窗安全聯動，以及愛好 Node-RED 流程開發者所需之可匯入 Flow JSON。
+
+### 2. 處理作為與實作修復
+1. **新增整合專屬品牌圖示與靜態資源註冊**：
+   * 將使用者提供之 [`CWA.png`](file:///f:/Antigravity/Rain/CWA.png) 處理為 512x512 高解析度方形 [`icon.png`](file:///f:/Antigravity/Rain/icon.png) 與橫向橫幅 [`logo.png`](file:///f:/Antigravity/Rain/logo.png)，同步部署於專案根目錄與 [`custom_components/cwa_rain/`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/)。
+   * 在 [`custom_components/cwa_rain/__init__.py`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/__init__.py) 中實作 `async_setup`，呼叫 `hass.http.register_static_path` 註冊全系統可用的 `/cwa_rain_static/CWA.png` 與 `/cwa_rain_static/icon.png` 靜態圖檔路由，使用者無需建立任何資料夾即可於推播與前端卡片直接引用。
+   * 在 [`custom_components/cwa_rain/sensor.py`](file:///f:/Antigravity/Rain/custom_components/cwa_rain/sensor.py) 中為 `sensor.cwa_rain_monitor` 配置 `_attr_entity_picture = "/cwa_rain_static/CWA.png"`，在 Home Assistant 前端介面直接呈現氣象署專屬品牌圖標。
+2. **編撰《Home Assistant 降雨聯動自動化與 Node-RED 實戰指南》**：
+   * 建立獨立專用技術文件 [`AUTOMATION_GUIDE.md`](file:///f:/Antigravity/Rain/AUTOMATION_GUIDE.md)。
+   * **Home Assistant 原生自動化 (YAML)**：提供「驟雨立即關窗與雨遮」、「雨雲接近 TTS 智慧音箱語音廣播」、「停雨 15 分鐘冷卻期滿自動重新開窗通風」以及「多地點公司下班提醒帶傘」共 4 組完整且含詳細繁體中文逐行註解的腳本。
+   * **Node-RED 視覺化流程 (Flow)**：繪製 Mermaid 架構圖，提供完整標準的 Node-RED Flow JSON 代碼，支援一鍵複製並於 Node-RED 點擊 Import 立即生成完整聯動節點圖，並詳細解說每個節點的實體代碼替換方法。
+3. **單元測試驗證與版本升級**：
+   * 單元測試 8 項全數通過，升級版本為 `1.0.3`。
+
+---
+
 ## 歷次修正與驗證摘要表
 
 | 序號 | 問題類型 | 涉及模組 / 元件 | 處置作為簡述 | 驗證方式 |
@@ -618,3 +638,4 @@ NameError: name 'DEFAULT_LOCATION_NAME' is not defined. Did you mean: 'CONF_LOCA
 | **19** | 儲存庫更名與 Release 發布 | `manifest.json`, `.github/workflows/release.yml` | 更名為 `cwa-rain-monitor`，建立 v1.0.0 標籤與自動化 ZIP 打包發布 Release。 | GitHub Release 順利生成 |
 | **20** | HA 實體初始化 NameError | `coordinator.py`, `tests/` | `coordinator.py` 遺漏 `DEFAULT_LOCATION_NAME` 匯入；補齊並擴展測試覆蓋與泛型 Mock。 | 單元測試 6 項通過，升級 v1.0.1 |
 | **21** | HACS 實體名稱過長與零碎分散 | `sensor.py`, `binary_sensor.py`, `const.py` | 停用 has_entity_name，回歸單一綜合感測器與簡短 ID，同步支援 input_boolean。 | 單元測試 8 項全數通過，升級 v1.0.2 |
+| **22** | 官方圖示與自動化指南 | `icon.png`, `__init__.py`, `AUTOMATION_GUIDE.md` | 產生 CWA 圖示與靜態路由，提供 4 組 YAML 自動化與 Node-RED Flow。 | 單元測試 8 項通過，升級 v1.0.3 |

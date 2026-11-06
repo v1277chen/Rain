@@ -601,3 +601,4 @@ entities:
   - entity: binary_sensor.is_raining
   - entity: binary_sensor.rain_approaching_warning
 ```
+
